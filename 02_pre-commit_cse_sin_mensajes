@@ -1,0 +1,49 @@
+#!/bin/sh
+# Hook pre-commit para proyectos Java
+
+#Indica que el script se ejecutará con sh (puede ser Bash o Dash, según el sistema).
+#El comentario aclara que se trata de un hook pre-commit, es decir, un script que se ejecuta antes de que Git confirme un commit.
+Sirve para validar el código antes de guardarlo en el repositorio.
+
+
+# Directorio donde está el código fuente
+SRC_DIR="src"
+BIN_DIR="bin"
+
+#Define dos variables:
+
+#SRC_DIR: carpeta donde están los archivos fuente .java.
+#BIN_DIR: carpeta donde se guardarán los archivos compilados .class.
+
+#Esto permite que el script sea más flexible si en el futuro cambias la estructura del proyecto.
+mkdir -p $BIN_DIR
+
+#Crea el directorio de salida (bin) si no existe.
+#La opción -p evita errores si la carpeta ya está creada.
+
+javac -d $BIN_DIR $(find $SRC_DIR -name "*.java")
+
+#Compila todos los archivos .java dentro del directorio src.
+#find $SRC_DIR -name "*.java" busca todos los ficheros Java recursivamente.
+#javac -d $BIN_DIR indica que los archivos compilados deben guardarse dentro del directorio bin.
+
+#Esto garantiza que no se haga commit si el código no compila correctamente.
+
+if [ $? -ne 0 ]; then
+  echo "XXXX"
+  exit 1
+fi
+
+#$? contiene el código de salida del último comando ejecutado (javac).
+#Si es distinto de 0, significa que la compilación falló (hay errores de sintaxis o dependencias).
+#En ese caso:
+
+#Muestra el mensaje "XXXX" (debería reemplazarse por algo como "Error: compilación fallida, revisa el código Java.").
+
+#Sale con código 1, lo que bloquea el commit.
+#echo "XXXX"
+echo "XXXX"
+
+#Este mensaje se muestra si no hubo errores de compilación.
+#Indica que el código se compiló correctamente y Git puede continuar con el commit.
+#(Sugerencia: cámbialo por algo más descriptivo, por ejemplo "Compilación correcta. Commit permitido.")

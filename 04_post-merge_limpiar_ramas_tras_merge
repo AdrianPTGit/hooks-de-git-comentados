@@ -1,0 +1,163 @@
+#!/bin/bash
+
+#Indica que el script debe ejecutarse con el intérprete Bash.
+#El comentario explica que este hook eliminará ramas locales después de una fusión (merge).
+
+#--------------------------------------------
+#Hook que limpia las ramas locales tras merge
+#--------------------------------------------
+
+
+#--------------------------------------------
+# para interaación desde la consola
+#--------------------------------------------
+
+exec < /dev/tty #Redirige la entrada estándar al terminal (tty).
+#Esto permite que el hook pueda pedir confirmaciones al usuario aunque Git 
+#normalmente ejecute los hooks sin interacción directa.
+
+echo "lanzando.." # Muestra un mensaje inicial para indicar que el hook se está ejecutando.
+
+#--------------------------------------------
+# Recuperamos el nombre d ela rama actual
+#--------------------------------------------
+
+#Ejecuta git branch para listar las ramas locales.
+#Usa grep "*" para filtrar la rama actual (Git marca la rama activa con un asterisco).
+#Usa sed para eliminar el asterisco y el espacio, dejando solo el nombre de la rama actual.
+#Resultado: branch_name contiene el nombre de la rama donde estás actualmente.
+
+branch_name=$(git branch | grep "*" | sed "s/\* //")
+
+#--------------------------------------------
+# Recuperamos el nombre de la rama recien fusionada
+#--------------------------------------------
+#git reflog -1 obtiene el último registro del reflog, es decir, la última acción de Git (probablemente el merge).
+#Luego se extrae con cut el cuarto campo del mensaje (que normalmente contiene el nombre de la rama fusionada).
+#sed "s/://" elimina el carácter “:” del final.
+#main_branch obtiene el nombre de la rama principal configurada (por ejemplo, main o master).
+
+reflog_message=$(git reflog -1)
+merged=$(echo $reflog_message | cut -d" " -f 4 | sed "s/://")
+main_branch=$(git config --get init.defaultBranch)
+
+#Resultado:
+#merged → nombre de la rama que acaba de fusionarse.
+#main_branch → rama principal del repositorio.
+
+#--------------------------------------------
+# Si la rama recien fusionada es la principal, salimos
+#--------------------------------------------
+
+if [[ $merged = $main_branch ]]; then
+	echo "Estas en la rama principal, no se eliminarán ramas"
+	exit 0
+fi
+#Si detecta que la rama fusionada es la principal, el script no hace nada y termina.
+#Esto evita borrar ramas importantes como main o master
+
+#--------------------------------------------
+# Mostramos mensaje
+#--------------------------------------------
+
+#Muestra un mensaje informativo indicando qué rama fue fusionada en cuál.
+
+echo " "
+echo "Fusionada \"$merged\" en \"$branch_name\". "
+
+#--------------------------------------------
+# Preguntamos la acción
+#--------------------------------------------
+
+#Solicita confirmación del usuario antes de borrar la rama.
+#Si el usuario responde y, se procederá con la eliminación.
+
+#Si el usuario confirma (y):
+#Borra la rama local (git branch -d).
+#Borra la rama remota (git push origin --delete).
+#Termina el script con código de salida 1.
+
+#Si el usuario no confirma, muestra un mensaje indicando que no se borró la rama.
+read -p "¿Quieres borrar la rama \"$merged\"? (y/N) " answer
+
+if [[ "$answer" == "y" ]]; then
+	echo "Borrando la rama local"
+	git branch -d $merged
+
+	echo "Borrando la rama remota"
+	git push origin --delete $merged
+	exit 1
+else
+	echo "No s eha podido borrar la rama"
+fi
+
+#-----------------------------------------------------------------
+#Resumen funcional:
+
+#Este hook (por ejemplo, un post-merge hook) hace lo siguiente:
+
+#Detecta qué rama se acaba de fusionar.
+
+#Verifica que no sea la rama principal (main, master).
+
+#Pregunta al usuario si desea eliminar la rama fusionada.
+
+#Si acepta, borra tanto la rama local como la remota.
+#-----------------------------------------------------------------
+
+#1. Ubicación del hook
+#-----------------------------------------------------------------
+
+
+#Dentro de tu repositorio Git, los hooks se guardan en la carpeta oculta:
+#.git/hooks/
+
+#Por ejemplo, si tu proyecto está en:
+#/home/adrian/Proyectos/mi-repo/
+
+#La ruta completa del hook sería:
+#/home/adrian/Proyectos/mi-repo/.git/hooks/post-merge
+
+#2. Nombre del archivo
+#-----------------------------------------------------------------
+
+#Guarda tu script con el nombre:
+#post-merge
+
+#(sin extensión, no pongas .sh)
+
+#El nombre post-merge es especial: Git lo ejecuta automáticamente justo después de que se complete un git merge.
+
+#3. Dar permisos de ejecución
+#-----------------------------------------------------------------
+
+#Una vez creado el archivo, debes darle permisos de ejecución:
+#chmod +x .git/hooks/post-merge
+
+#Esto es necesario para que Git pueda ejecutarlo.
+
+#4. Confirmar que el hook se ejecuta
+#-----------------------------------------------------------------
+
+#Haz una prueba:
+#git merge nombre-de-una-rama
+
+#Después del merge, deberías ver el mensaje:
+
+#lanzando..
+#Fusionada "nombre-de-la-rama" en "main".
+#¿Quieres borrar la rama "nombre-de-la-rama"? (y/N)
+
+
+#Si ves esto, el hook está funcionando correctamente 
+
+#5. (Opcional) Aplicar el hook a todos tus repositorios
+#-----------------------------------------------------------------
+
+#Si quieres usar este hook en todos los repositorios nuevos que crees, puedes copiarlo a la plantilla de Git global:
+
+#mkdir -p ~/.git-templates/hooks
+#cp .git/hooks/post-merge ~/.git-templates/hooks/
+#git config --global init.templatedir '~/.git-templates'
+
+#Así, cada vez que hagas git init o clones un repo nuevo, Git copiará automáticamente tus hooks personalizados.

@@ -1,0 +1,112 @@
+#!/bin/sh
+# 
+# Requisitos: bash/sh, grep, sed, cut, javac (opcional)
+
+#Indica que el script debe ejecutarse con el intérprete de sh (puede ser Bash o Dash según el sistema).
+#En el comentario se listan las dependencias necesarias:
+
+#grep, sed, cut para procesar texto.
+#javac es opcional, por si se quiere agregar compilación.
+
+#Muestra un mensaje inicial (podrías sustituir "XXXX" por algo más descriptivo, 
+#como "Verificando nombres de clases Java...").
+
+echo "XXXX"
+
+#--------------------------------------------
+# Archivos modificados y añadidos al commit (solo .java)
+#--------------------------------------------
+
+#git diff --cached --name-only --diff-filter=ACM obtiene los archivos que serán incluidos en el commit, filtrando solo:
+
+#A → Añadidos
+
+#C → Copiados
+
+#M → Modificados
+
+#Luego, grep '\.java$' deja únicamente los archivos con extensión .java.
+#La variable CHANGES contiene esa lista.
+
+#Ejemplo: si modificas src/App.java y src/Test.java, esos dos se revisarán.
+
+CHANGES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.java$')
+
+#Variable de control que servirá para marcar si se detectan clases con nombres incorrectos.
+BAD_NAMES=0
+#--------------------------------------------
+#  Analizar cada archivo Java modificado
+#--------------------------------------------
+
+#Recorre cada archivo Java incluido en el commit.
+
+for file in $CHANGES; do
+  #--------------------------------------------
+  # Verificar que el archivo existe (no borrado)
+  #--------------------------------------------
+
+  #Comprueba que el archivo aún existe en el sistema de archivos (por si fue eliminado).
+  #Si no existe, se omite con continue.
+
+  if [ ! -f "$file" ]; then
+    continue
+  fi
+
+  #--------------------------------------------
+  # Buscar nombres de clase dentro del archivo
+  #--------------------------------------------
+
+  #Usa grep para encontrar líneas que contengan la palabra class seguida de un nombre válido (letras, números o guiones bajos).
+  #sed extrae solo el nombre de la clase (el texto después de class).
+  #El resultado se guarda en CLASS_NAMES.
+  CLASS_NAMES=$(grep -E 'class\s+[A-Za-z0-9_]+' "$file" | sed -E 's/.*class\s+([A-Za-z0-9_]+).*/\1/')
+  #Ejemplo:
+  #Si el archivo contiene public class persona, se capturará persona.
+
+  for name in $CLASS_NAMES; do
+    FIRST_CHAR=$(echo "$name" | cut -c1)
+    if ! echo "$FIRST_CHAR" | grep -q '[A-Z]'; then
+      echo "XXXX"
+      BAD_NAMES=1
+    fi
+  done
+done
+
+#Para cada clase encontrada:
+
+#Obtiene su primer carácter (cut -c1).
+
+#Comprueba si no está en mayúscula (grep -q '[A-Z]' → devuelve 0 si encuentra una mayúscula).
+
+#Si no está en mayúscula, imprime "XXXX" (podrías reemplazarlo por:
+#"Error: la clase '$name' debe comenzar con mayúscula en $file").
+
+#Cambia BAD_NAMES=1 para marcar el error.
+
+#Esto fuerza la convención de Java:
+
+#Los nombres de clase deben comenzar con una letra mayúscula.
+
+#--------------------------------------------
+# Cancelar el commit si hay errores
+#--------------------------------------------
+
+if [ $BAD_NAMES -ne 0 ]; then
+  echo "XXXX"
+  exit 1
+fi
+
+#Si BAD_NAMES es distinto de 0, significa que se detectó al menos una clase con un nombre inválido.
+#En ese caso:
+
+#Muestra "XXXX" (puede cambiarse por "Commit cancelado: hay clases con nombre no válido.")
+
+#Sale con exit 1, lo que bloquea el commit.
+
+echo "XXXX"
+exit 0
+#Si no hubo errores:
+
+#Muestra un mensaje de éxito (por ejemplo "Convenciones correctas. Commit permitido.")
+
+#Sale con código 0, permitiendo continuar el commit.

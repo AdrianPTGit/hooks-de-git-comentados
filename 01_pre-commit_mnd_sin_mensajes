@@ -1,0 +1,51 @@
+#!/bin/sh
+# Hook pre-commit: se ejecuta antes de hacer git commit
+
+#Este es un hook pre-commit sencillo que sirve para bloquear commits con mensajes demasiado genéricos, como “Update” o “Fix”.
+#Aquí tienes el código completamente comentado y explicado línea a línea 👇
+
+#Indica que el script debe ejecutarse con el intérprete sh.
+#El comentario aclara que este hook se ejecuta automáticamente antes de crear el commit.
+#Su propósito es realizar verificaciones previas y, si algo falla, cancelar el commit.
+
+
+echo "Ejecutando hook pre-commit..."
+#Muestra un mensaje inicial para indicar que el hook se está ejecutando.
+#Es útil para confirmar que Git lo está detectando correctamente.
+
+# 
+COMMIT_MSG=$(git log -1 --pretty=%B)
+
+#Intenta obtener el mensaje del último commit usando git log -1 --pretty=%B.
+#Sin embargo, esto no es correcto para un hook pre-commit, ya que el commit aún no se ha creado.
+#Este comando devuelve el mensaje del último commit existente, no el nuevo.
+
+#Para obtener el mensaje actual que el usuario está escribiendo, deberías usar el hook commit-msg (no pre-commit), 
+#porque solo commit-msg recibe como parámetro el archivo temporal con el texto del commit.
+
+if [ "$COMMIT_MSG" = "Update" ] || [ "$COMMIT_MSG" = "Fix" ]; then
+    echo "XXX"
+    exit 1
+fi
+
+#Comprueba si el mensaje del commit es exactamente "Update" o "Fix".
+#Si lo es:
+
+#Muestra "XXX" (debería reemplazarse por un mensaje más claro, por ejemplo:
+#"Error: el mensaje de commit es demasiado genérico. Usa algo más descriptivo.")
+
+#Sale con código 1, lo que bloquea el commit.
+
+echo "Todo correcto. Se realizará el commit."
+
+#Muestra un mensaje confirmando que no hay problemas y el commit puede continuar.
+
+#En resumen
+
+#Este hook intenta evitar commits con mensajes genéricos como “Update” o “Fix”.
+
+#Tipo de hook	    Momento en que se ejecuta	                            Mejor uso
+#------------------------------------------------------------------------------------------------------------------
+#pre-commit	        Antes de crear el commit	                            Revisar código, ejecutar tests, etc.
+#commit-msg	        Justo después de escribir el mensaje del commit	        Revisar o validar el texto del mensaje
+#commit-msg	        Justo después de escribir el mensaje del commit	        Revisar o validar el texto del mensaje
