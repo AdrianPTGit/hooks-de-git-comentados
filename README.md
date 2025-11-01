@@ -200,11 +200,32 @@ javac PreCommitHook.java
 - Ahora, crea el archivo `.git/hooks/pre-commit` con este contenido:
 
   ```bash
-  #!/usr/bin/env bash
+# Ejecuta el hook Java
+
+```bash
+#!/usr/bin/env bash
 # Ejecuta el hook Java
 java -cp "$(dirname "$0")" PreCommitHook
 ```
 - Hazlo ejecutable:
+
 ```bash
 chmod +x .git/hooks/pre-commit
+```
+## 4. Prueba
+
+### 1. Añade un archivo con la palabra “TODO”.
+
+### 2. Haz un commit:
+
+```bash
+git add .
+git commit -m "test"
+```
+
+### 3. Verás algo como:
+
+```bash
+Encontrado TODO en: src/Main.java
+Commit cancelado. Elimina los TODO antes de confirmar.
 ```
