@@ -35,7 +35,7 @@ for f in changed.stdout.splitlines():
 
 sys.exit(0)
 ```
-## Consideraciones para Windowschmod +x .git/hooks/pre-commit
+## Consideraciones para Windows
 
 En **Windows** puedes usar archivos `.bat` / `.cmd` o **PowerShell**.  
 **Git for Windows** puede ejecutar scripts POSIX si usas **Git Bash**.
