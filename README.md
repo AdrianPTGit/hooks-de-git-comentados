@@ -17,7 +17,7 @@ No están restringidos a **bash**: pueden ser scripts en **Python**, **Node.js**
 
 ### Ejemplo: con Python (`pre-commit`):
 
-```python
+```pythonchmod +x .git/hooks/pre-commit
 #!/usr/bin/env python3
 import sys
 import subprocess
@@ -35,7 +35,7 @@ for f in changed.stdout.splitlines():
 
 sys.exit(0)
 ```
-## Consideraciones para Windows
+## Consideraciones para Windowschmod +x .git/hooks/pre-commit
 
 En **Windows** puedes usar archivos `.bat` / `.cmd` o **PowerShell**.  
 **Git for Windows** puede ejecutar scripts POSIX si usas **Git Bash**.
@@ -56,7 +56,7 @@ También puedes colocar un ejecutable (`.exe`) como hook.
 
 - Para proyectos JavaScript, hay herramientas como `husky` que facilitan la gestión y distribución de hooks (se instalan en `node_modules` y se configuran desde `package.json`).
 
-### Ejemplo simple en Node.js (pre-commit):
+### Ejemplo simple en Node.js (pre-commit):chmod +x .git/hooks/pre-commit
 
 ```javascript
 Ejemplo simple en Node.js (pre-commit)
@@ -75,4 +75,136 @@ for (const f of files) {
 }
 process.exit(0);
 
+```
+### Ejemplo: pre-commit hook en Java
+
+> Queremos crear un hook que impida el commit si algún archivo contiene la palabra TODO.
+
+## 1. Código Java del hook
+
+- Guarda este código como `PreCommitHook.java` (en cualquier carpeta, por ejemplo en el propio `.git/hooks`):
+
+```java
+import java.io.*;
+import java.util.*;
+
+public class PreCommitHook {
+    public static void main(String[] args) {
+        try {
+            // Ejecuta 'git diff --cached --name-only' para obtener los archivos en el commit
+            Process process = new ProcessBuilder("git", "diff", "--cached", "--name-only")
+                    .redirectErrorStream(true)
+                    .start();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            List<String> files = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isEmpty()) files.add(line);
+            }
+            process.waitFor();
+
+            boolean error = false;
+
+            for (String file : files) {
+                File f = new File(file);chmod +x .git/hooks/pre-commit
+                if (!f.exists()) continue;
+
+                try (BufferedReader fr = new BufferedReader(new FileReader(f))) {
+                    String content;
+                    while ((content = fr.readLine()) != null) {
+                        if (content.contains("TODO")) {
+                            System.err.println("Encontrado TODO en: " + file);
+                            error = true;
+                            break;
+                        }import java.io.*;
+import java.util.*;
+
+public class PreCommitHook {
+    public static void main(String[] args) {
+        try {
+            // Ejecuta 'git diff --cached --name-only' para obtener los archivos en el commit
+            Process process = new ProcessBuilder("git", "diff", "--cached", "--name-only")
+                    .redirectErrorStream(true)
+                    .start();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            List<String> files = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isEmpty()) files.add(line);
+            }
+            process.waitFor();
+
+            boolean error = false;
+
+            for (String file : files) {
+                File f = new File(file);
+                if (!f.exists()) continue;
+
+                try (BufferedReader fr = new BufferedReader(new FileReader(f))) {
+                    String content;
+                    while ((content = fr.readLine()) != null) {
+                        if (content.contains("TODO")) {
+                            System.err.println("Encontrado TODO en: " + file);
+                            error = true;
+                            break;
+                        }
+                    }
+                }
+            }
+chmod +x .git/hooks/pre-commit
+            if (error) {
+                System.err.println("Commit cancelado. Elimina los TODO antes de confirmar.");
+                System.exit(1);
+            } else {
+                System.out.println("Todo correcto. Commit permitido.");
+                System.exit(0);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error ejecutando hook: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+}
+                    }
+                }
+            }
+
+            if (error) {
+                System.err.println("Commit cancelado. Elimina los TODO antes de confirmar.");
+                System.exit(1);
+            } else {
+                System.out.println("Todo correcto. Commit permitido.");
+                System.exit(0);
+            }chmod +x .git/hooks/pre-commit
+
+        } catch (Exception e) {
+            System.err.println("Error ejecutando hook: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+}
+```
+## 2. Compílalo
+
+Desde la carpeta donde guardaste el archivo:
+```bash
+javac PreCommitHook.java
+```
+- Esto generará `PreCommitHook.class`.
+- 
+## 3. Crea el script del hook en `.git/hooks/pre-commit`
+
+- Ahora, crea el archivo `.git/hooks/pre-commit` con este contenido:
+
+  ```bash
+  #!/usr/bin/env bash
+# Ejecuta el hook Java
+java -cp "$(dirname "$0")" PreCommitHook
+```
+- Hazlo ejecutable:
+```bash
+chmod +x .git/hooks/pre-commit
 ```
