@@ -17,7 +17,7 @@ No están restringidos a **bash**: pueden ser scripts en **Python**, **Node.js**
 
 ### Ejemplo: con Python (`pre-commit`):
 
-```pythonchmod +x .git/hooks/pre-commit
+```python
 #!/usr/bin/env python3
 import sys
 import subprocess
